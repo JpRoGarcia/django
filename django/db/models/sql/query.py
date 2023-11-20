@@ -1417,34 +1417,34 @@ class Query(BaseExpression):
                 "permitted%s" % (name, output_field.__name__, suggestion)
             )
 
-        def handle_isnull_negation(
-            self,
-            current_negated,
-            lookup_type,
-            condition,
-            targets,
-            join_list,
-            clause,
-            alias,
-            value
+    def handle_isnull_negation(
+        self,
+        current_negated,
+        lookup_type,
+        condition,
+        targets,
+        join_list,
+        clause,
+        alias,
+        value
+    ):
+        if (
+            current_negated
+            and (lookup_type != "isnull" or condition.rhs is False)
+            and condition.rhs is not None
         ):
-            if (
-                current_negated
-                and (lookup_type != "isnull" or condition.rhs is False)
-                and condition.rhs is not None
-            ):
-                if lookup_type != "isnull":
-                    if (
-                        self.is_nullable(targets[0])
-                        or self.alias_map[join_list[-1]].join_type == LOUTER
-                    ):
-                        lookup_class = targets[0].get_lookup("isnull")
-                        col = self._get_col(targets[0], join_info.targets[0], alias)
-                        clause.add(lookup_class(col, False), AND)
-                    
-                    if isinstance(value, Col) and self.is_nullable(value.target):
-                        lookup_class = value.target.get_lookup("isnull")
-                        clause.add(lookup_class(value, False), AND)
+            if lookup_type != "isnull":
+                if (
+                    self.is_nullable(targets[0])
+                    or self.alias_map[join_list[-1]].join_type == LOUTER
+                ):
+                    lookup_class = targets[0].get_lookup("isnull")
+                    col = self._get_col(targets[0], join_info.targets[0], alias)
+                    clause.add(lookup_class(col, False), AND)
+                
+                if isinstance(value, Col) and self.is_nullable(value.target):
+                    lookup_class = value.target.get_lookup("isnull")
+                    clause.add(lookup_class(value, False), AND)
 
     def build_filter(
         self,
@@ -1580,6 +1580,7 @@ class Query(BaseExpression):
         require_outer = (
             lookup_type == "isnull" and condition.rhs is True and not current_negated
         )
+
         handle_isnull_negation(
             self,
             current_negated,
